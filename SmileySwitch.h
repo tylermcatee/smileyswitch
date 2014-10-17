@@ -12,13 +12,15 @@
 
 @property (nonatomic, getter=isOn) BOOL on;
 
-@property (nonatomic, strong) UIColor *backgroundColor; // Default is a shade of grey
+// Customization properties
+@property (nonatomic, strong) UIColor *backingColor; // Default is a shade of grey
 @property (nonatomic, strong) UIColor *onColor; // Default is a shade of green
 @property (nonatomic, strong) UIColor *offColor; // Default is a shade of red
+@property (nonatomic) BOOL shouldDisplayShadows; // Default is YES, if NO will not display the shadows under the layers.
 
 /*!
  @method SmileySwitch
- @abstract Initializes an instance of SmileySwitch with frame (0, 0, 140, 90).
+ @abstract Initializes an instance of SmileySwitch with frame (0, 0, 90, 44).
 */
 +(instancetype)SmileySwitch;
 

@@ -32,7 +32,7 @@
 }
 
 -(instancetype)init {
-    self = [self initWithFrame:CGRectMake(0, 0, 144, 90)];
+    self = [self initWithFrame:CGRectMake(0, 0, 90, 44)];
     return self;
 }
 
@@ -58,10 +58,11 @@
 -(void)addLayers {
     
     float radiusValue = self.bounds.size.width/4.;
+    self.shouldDisplayShadows = YES;
     
     // Add the background layer
     CAShapeLayer *backgroundLayer = [CAShapeLayer layer];
-    backgroundLayer.fillColor = self.backgroundColor.CGColor;
+    backgroundLayer.fillColor = self.backingColor.CGColor;
     UIBezierPath *ovalPath = [UIBezierPath bezierPathWithRoundedRect:self.bounds cornerRadius:radiusValue];
     backgroundLayer.path = ovalPath.CGPath;
     backgroundLayer.shadowRadius = 3.0;
@@ -171,20 +172,20 @@
 #pragma mark -
 #pragma mark Color Getters / Setters
 
-@synthesize backgroundColor = _backgroundColor;
+@synthesize backingColor = _backingColor;
 
--(void)setBackgroundColor:(UIColor *)backgroundColor {
-    _backgroundColor = backgroundColor;
+-(void)setbackingColor:(UIColor *)backingColor {
+    _backingColor = backingColor;
     if (self.backgroundLayer) {
-        self.backgroundLayer.fillColor = backgroundColor.CGColor; // Update the background layer
+        self.backgroundLayer.fillColor = backingColor.CGColor; // Update the background layer
     }
 }
 
--(UIColor *)backgroundColor {
-    if (!_backgroundColor) {
-        _backgroundColor = [UIColor colorWithRed:247.0f/255.0f green:244.0f/255.0f blue:242.0f/255.0f alpha:1.0];
+-(UIColor *)backingColor {
+    if (!_backingColor) {
+        _backingColor = [UIColor colorWithRed:247.0f/255.0f green:244.0f/255.0f blue:242.0f/255.0f alpha:1.0];
     }
-    return _backgroundColor;
+    return _backingColor;
 }
 
 @synthesize onColor = _onColor;
@@ -211,6 +212,20 @@
         _offColor = [UIColor colorWithRed:180.0f/255.0f green:180.0f/255.0f blue:180.0f/255.0f alpha:1.0];
     }
     return _offColor;
+}
+
+#pragma mark -
+#pragma mark - Further setters / getters
+
+-(void)setShouldDisplayShadows:(BOOL)shouldDisplayShadows {
+    _shouldDisplayShadows = shouldDisplayShadows;
+    if (_shouldDisplayShadows) {
+        self.backgroundLayer.shadowRadius = 3.0;
+        self.backgroundLayer.shadowOpacity = 0.3;
+    } else {
+        self.backgroundLayer.shadowRadius = 0.0;
+        self.backgroundLayer.shadowOpacity = 0.0;
+    }
 }
 
 @end
