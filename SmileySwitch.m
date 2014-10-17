@@ -10,23 +10,36 @@
 
 @interface SmileySwitch()
 
-// Background layers
+// Background layer
 @property (nonatomic, weak) CAShapeLayer *backgroundLayer;
-@property (nonatomic, weak) CALayer *centerContainer;
 
 // The animated layers
 @property (nonatomic, weak) CATextLayer *leftColon;
 @property (nonatomic, weak) CATextLayer *rightColon;
 @property (nonatomic, weak) CATextLayer *parenthesis;
 
+
 @end
 
 @implementation SmileySwitch
 
+#pragma mark -
+#pragma mark Initialization
+
++(instancetype)SmileySwitch {
+    SmileySwitch *smiley = [[SmileySwitch alloc] init];
+    return smiley;
+}
+
+-(instancetype)init {
+    self = [self initWithFrame:CGRectMake(0, 0, 144, 90)];
+    return self;
+}
+
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        [self sharedInit];
+        [self addLayers];
     }
     return self;
 }
@@ -34,12 +47,15 @@
 - (instancetype)initWithCoder:(NSCoder *)aDecoder {
     self = [super initWithCoder:aDecoder];
     if (self) {
-        [self sharedInit];
+        [self addLayers];
     }
     return self;
 }
 
--(void)sharedInit {
+#pragma mark -
+#pragma mark - Setting up the Layers
+
+-(void)addLayers {
     
     float radiusValue = self.bounds.size.width/4.;
     
@@ -55,64 +71,83 @@
     self.backgroundLayer = backgroundLayer; // Store weak pointer
     [self setBackgroundShadow]; // Set the background shadow
     
-    // Add the center container
-    CALayer *centerContainer = [CALayer layer];
-    centerContainer.frame = CGRectInset(self.bounds, self.bounds.size.width / 8., self.bounds.size.height / 8.);
-    [self.layer addSublayer:centerContainer];
-    self.centerContainer = centerContainer;
-    
     // Add the left colon
     CATextLayer *leftColon = [CATextLayer layer];
     leftColon.contentsScale = [UIScreen mainScreen].scale;
-    leftColon.string = @":";
     leftColon.foregroundColor = [self isOn] ? self.onColor.CGColor : self.offColor.CGColor;
-    leftColon.frame = CGRectOffset(self.centerContainer.bounds, 0, -self.bounds.size.height / 8.); // To account for the colon offset heights
+    leftColon.string = @":";
     leftColon.alignmentMode = kCAAlignmentLeft;
-    leftColon.fontSize = self.centerContainer.frame.size.height;
-    [self.centerContainer addSublayer:leftColon];
+    [self.layer addSublayer:leftColon];
     self.leftColon = leftColon;
     
     // Add the right colon
     CATextLayer *rightColon = [CATextLayer layer];
     rightColon.contentsScale = [UIScreen mainScreen].scale;
-    rightColon.string = @":";
     rightColon.foregroundColor = [self isOn] ? self.onColor.CGColor : self.offColor.CGColor;
-    rightColon.frame = CGRectOffset(self.centerContainer.bounds, 0, -self.bounds.size.height / 8.); // To account for the colon offset heights
+    rightColon.string = @":";
     rightColon.alignmentMode = kCAAlignmentRight;
-    rightColon.fontSize = self.centerContainer.frame.size.height;
-    [self.centerContainer addSublayer:rightColon];
+    [self.layer addSublayer:rightColon];
     self.rightColon = rightColon;
     
     // Add the moving parenthesis
     CATextLayer *parenthesis = [CATextLayer layer];
     parenthesis.contentsScale = [UIScreen mainScreen].scale;
-    parenthesis.string = @")";
     parenthesis.foregroundColor = [self isOn] ? self.onColor.CGColor : self.offColor.CGColor;
+    parenthesis.string = @")";
     parenthesis.alignmentMode = kCAAlignmentCenter;
-    parenthesis.fontSize = self.centerContainer.frame.size.height - self.bounds.size.height / 6.;
-    [self.centerContainer addSublayer:parenthesis];
+    [self.layer addSublayer:parenthesis];
     self.parenthesis = parenthesis;
+
+    float fontSize = self.bounds.size.height;
     
+    // position the left colon
+    leftColon.frame = CGRectOffset(self.bounds, self.bounds.size.width / 8., -self.bounds.size.height / 6.); // Experimentally determined to 'center' colon
+    leftColon.font = (__bridge CFTypeRef)([UIFont fontWithName:@"ArialRoundedMTBold" size:fontSize]);
+    leftColon.fontSize = fontSize;
+    
+    // position the right colon
+    rightColon.frame = CGRectOffset(self.bounds, -self.bounds.size.width / 8., -self.bounds.size.height / 6.); // Experimentally determeind to 'center' colon
+    rightColon.font = (__bridge CFTypeRef)([UIFont fontWithName:@"ArialRoundedMTBold" size:fontSize]);
+    rightColon.fontSize = fontSize;
+    
+    // position the parenthesis (starting in center)
+    fontSize /= 2; // parenthesis font size is half of the colon font size.
+    parenthesis.fontSize = fontSize;
+    parenthesis.font = (__bridge CFTypeRef)([UIFont fontWithName:@"ArialRoundedMTBold" size:fontSize]);
+  
     // Move the parenthesis to its current position
     [self setParenthesisFrame];
-    
+
     // Add the gesture recognizers
+    
+    // Tap gesture for turning it on immediately
     UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapped:)];
     [self addGestureRecognizer:tapGestureRecognizer];
 }
 
 -(void)setParenthesisFrame {
-    float offset = [self isOn] ? -1 : 1;
-    offset = offset * (self.centerContainer.bounds.size.width/2. - 15);
+    // Move the parenthesis left or right depending on whether we are on or not
+    float offset = self.bounds.size.width/ 2. - self.bounds.size.width / 8. - self.bounds.size.height / 2.;
+    offset *= [self isOn] ? -1 : 1;
     [CATransaction begin];
     [CATransaction setAnimationDuration:0.5];
-    self.parenthesis.frame = CGRectOffset(self.centerContainer.bounds, offset, 0);
+    self.parenthesis.frame = CGRectOffset(self.bounds, offset, self.bounds.size.height / 6.); // height offset experimentally determined to center.
+    [CATransaction commit];
+}
+
+-(void)setParenthesisFramePartial:(CGFloat)percent {
+    float offset = self.bounds.size.width/ 2. - self.bounds.size.width / 8. - self.bounds.size.height / 2.;
+    offset *= [self isOn] ? -1 : 1;
+    [CATransaction begin];
+    [CATransaction setValue:(id)kCFBooleanTrue forKey:kCATransactionDisableActions];
+    self.parenthesis.frame = CGRectOffset(self.bounds, -offset + 2 * percent * offset, self.bounds.size.height / 6.); // height offset experimentally determined to center.
     [CATransaction commit];
 }
 
 -(void)setBackgroundShadow {
+    // Move the background shadow left or right depending on whether we are on or not
     [CATransaction begin];
-    [CATransaction setAnimationDuration:0.5];
+    [CATransaction setAnimationDuration:0.1];
     self.backgroundLayer.shadowOffset = CGSizeMake([self isOn] ? -5 : 5, 1);
     [CATransaction commit];
 }
@@ -134,7 +169,7 @@
 }
 
 #pragma mark -
-#pragma mark Color Getters (Lazily instantiated if not overwritten)
+#pragma mark Color Getters / Setters
 
 @synthesize backgroundColor = _backgroundColor;
 
